@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import MainLayout from "@/components/MainLayout";
@@ -42,22 +41,22 @@ const Index: React.FC = () => {
   return (
     <MainLayout>
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-purple-700 to-blue-500 text-white py-20">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <section className="hero-section relative text-white py-20">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <h1 className="text-4xl md:text-5xl font-bold mb-4 animate-fade-in">
-            Campus Events Central
+            Aditya Institute Of Management Studies & Research
           </h1>
           <p className="text-xl md:text-2xl mb-8 max-w-2xl mx-auto">
             Your one-stop platform for discovering, managing, and participating in campus events
           </p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link to="/events">
-              <Button className="bg-white text-purple-700 hover:bg-gray-100 hover:text-purple-800 btn-hover-effect">
+              <Button className="bg-teal-500 text-white hover:bg-teal-600 btn-hover-effect">
                 Discover Events
               </Button>
             </Link>
             <Link to="/login">
-              <Button className="bg-transparent border-2 border-white hover:bg-white hover:text-purple-700 btn-hover-effect">
+              <Button className="bg-transparent border-2 border-white hover:bg-white hover:text-teal-700 btn-hover-effect">
                 Login
               </Button>
             </Link>
@@ -111,9 +110,9 @@ const Index: React.FC = () => {
       {/* About Us Section */}
       <section className="bg-gray-50 py-16 px-4">
         <div className="container mx-auto max-w-4xl text-center">
-          <h2 className="text-3xl font-bold text-gray-800 mb-6">About Campus Events Central</h2>
+          <h2 className="text-3xl font-bold text-gray-800 mb-6">About Aditya Institute Of Management Studies & Research</h2>
           <p className="text-lg text-gray-600 mb-8">
-            Campus Events Central is the official event management platform for our college, 
+            Aditya Institute Of Management Studies & Research is the official event management platform for our college, 
             designed to connect students with exciting academic and social activities. 
             From workshops to cultural festivals, sports tournaments to career fairs, 
             discover, register, and participate in the vibrant campus life.
