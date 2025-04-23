@@ -25,13 +25,13 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from 'react-router-dom';
 
 const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 const registerSchema = loginSchema.extend({
-  firstName: z.string().min(2),
-  lastName: z.string().min(2),
+  firstName: z.string().min(2, "First name must be at least 2 characters"),
+  lastName: z.string().min(2, "Last name must be at least 2 characters"),
   role: z.enum(['student', 'organizer', 'admin']),
 });
 
@@ -40,9 +40,10 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 interface AuthFormProps {
   type: 'login' | 'register';
+  isAdminLogin?: boolean;
 }
 
-export function AuthForm({ type }: AuthFormProps) {
+export function AuthForm({ type, isAdminLogin = false }: AuthFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -65,12 +66,33 @@ export function AuthForm({ type }: AuthFormProps) {
     setIsLoading(true);
     try {
       if (type === 'login') {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data: authData, error } = await supabase.auth.signInWithPassword({
           email: data.email,
           password: data.password,
         });
+
         if (error) throw error;
-        toast({ title: "Login successful!" });
+
+        if (isAdminLogin) {
+          // Check if user is admin
+          const { data: userData, error: userError } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', authData.user?.id)
+            .single();
+
+          if (userError) throw userError;
+          
+          if (userData?.role !== 'admin') {
+            throw new Error("Access denied. Admin privileges required.");
+          }
+          
+          toast({ title: "Admin login successful!" });
+          navigate('/admin/dashboard');
+        } else {
+          toast({ title: "Login successful!" });
+          navigate('/');
+        }
       } else {
         const registerData = data as RegisterFormValues;
         const { error } = await supabase.auth.signUp({
@@ -84,11 +106,16 @@ export function AuthForm({ type }: AuthFormProps) {
             }
           }
         });
+        
         if (error) throw error;
-        toast({ title: "Registration successful!", description: "Please check your email to verify your account." });
+        toast({ 
+          title: "Registration successful!", 
+          description: "You can now log in with your credentials." 
+        });
+        navigate('/login');
       }
-      navigate('/');
     } catch (error) {
+      console.error("Auth error:", error);
       toast({
         title: type === 'login' ? "Login failed" : "Registration failed",
         description: error instanceof Error ? error.message : "An error occurred",
@@ -182,7 +209,7 @@ export function AuthForm({ type }: AuthFormProps) {
         />
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading ? `${type === 'login' ? 'Logging in' : 'Registering'}...` : 
-            type === 'login' ? 'Login' : 'Register'}
+            type === 'login' ? (isAdminLogin ? 'Admin Login' : 'Login') : 'Register'}
         </Button>
       </form>
     </Form>
