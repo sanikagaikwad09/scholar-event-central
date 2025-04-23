@@ -1,9 +1,9 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./contexts/AuthContext";
 
 // Pages
 import Index from "./pages/Index";
@@ -24,17 +24,19 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/events" element={<EventsPage />} />
-          <Route path="/events/:id" element={<EventDetailPage />} />
-          <Route path="/gallery" element={<GalleryPage />} />
-          <Route path="/about" element={<AboutPage />} />
-          <Route path="/feedback" element={<FeedbackPage />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/events" element={<EventsPage />} />
+            <Route path="/events/:id" element={<EventDetailPage />} />
+            <Route path="/gallery" element={<GalleryPage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/feedback" element={<FeedbackPage />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
