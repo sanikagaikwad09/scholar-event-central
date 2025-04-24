@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -9,15 +8,15 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { format } from "date-fns";
 
 const eventSchema = z.object({
@@ -66,7 +65,6 @@ export function EventForm({ eventId, onSuccess }: EventFormProps) {
           if (error) throw error;
           
           if (data) {
-            // Format the date for the input field
             const dateObj = new Date(data.date);
             const formattedDate = format(dateObj, "yyyy-MM-dd");
             
@@ -97,7 +95,6 @@ export function EventForm({ eventId, onSuccess }: EventFormProps) {
     setLoading(true);
     try {
       if (isEditing && eventId) {
-        // Update existing event
         const { error } = await supabase
           .from("events")
           .update({
@@ -115,14 +112,15 @@ export function EventForm({ eventId, onSuccess }: EventFormProps) {
           title: "Event updated successfully",
         });
       } else {
-        // Create new event
-        const { error } = await supabase.from("events").insert({
-          title: values.title,
-          description: values.description,
-          date: values.date,
-          location: values.location,
-          image_url: values.image_url || null,
-        });
+        const { error } = await supabase
+          .from("events")
+          .insert({
+            title: values.title,
+            description: values.description,
+            date: values.date,
+            location: values.location,
+            image_url: values.image_url || null,
+          });
         
         if (error) throw error;
         

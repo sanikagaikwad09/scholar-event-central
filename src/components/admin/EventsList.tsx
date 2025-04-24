@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -20,7 +19,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
-import { edit, trash } from "lucide-react";
+import { Edit, Trash } from "lucide-react";
 
 interface Event {
   id: string;
@@ -47,8 +46,8 @@ export function EventsList({ onEditEvent }: EventsListProps) {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('events')
-        .select('*')
+        .from("events")
+        .select("*")
         .order('date', { ascending: true });
       
       if (error) throw error;
@@ -78,7 +77,7 @@ export function EventsList({ onEditEvent }: EventsListProps) {
     
     try {
       const { error } = await supabase
-        .from('events')
+        .from("events")
         .delete()
         .eq('id', selectedEvent.id);
       
@@ -89,7 +88,7 @@ export function EventsList({ onEditEvent }: EventsListProps) {
       });
       
       setDeleteDialogOpen(false);
-      loadEvents(); // Reload the events list
+      loadEvents();
     } catch (error) {
       console.error("Error deleting event:", error);
       toast({
@@ -135,14 +134,14 @@ export function EventsList({ onEditEvent }: EventsListProps) {
                         size="icon" 
                         onClick={() => onEditEvent(event.id)}
                       >
-                        <edit className="h-4 w-4" />
+                        <Edit className="h-4 w-4" />
                       </Button>
                       <Button 
                         variant="outline" 
                         size="icon"
                         onClick={() => handleDeleteClick(event)}
                       >
-                        <trash className="h-4 w-4" />
+                        <Trash className="h-4 w-4" />
                       </Button>
                     </div>
                   </TableCell>
