@@ -71,7 +71,22 @@ export function AuthForm({ type, isAdminLogin = false }: AuthFormProps) {
           password: data.password,
         });
 
-        if (error) throw error;
+        if (error) {
+          // Special handling for "Email not confirmed" error
+          if (error.message === "Email not confirmed") {
+            // Send a new confirmation email
+            await supabase.auth.resendConfirmationEmail({ email: data.email });
+            
+            toast({ 
+              title: "Email verification required", 
+              description: "We've sent you a new verification email. Please check your inbox to confirm your email and try again.",
+              variant: "default"
+            });
+            setIsLoading(false);
+            return;
+          }
+          throw error;
+        }
 
         if (isAdminLogin) {
           // Check if user is admin
