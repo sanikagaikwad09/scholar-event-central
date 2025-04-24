@@ -74,8 +74,11 @@ export function AuthForm({ type, isAdminLogin = false }: AuthFormProps) {
         if (error) {
           // Special handling for "Email not confirmed" error
           if (error.message === "Email not confirmed") {
-            // Send a new confirmation email
-            await supabase.auth.resendConfirmationEmail({ email: data.email });
+            // Send a new confirmation email using the correct method
+            await supabase.auth.resend({
+              type: 'signup',
+              email: data.email,
+            });
             
             toast({ 
               title: "Email verification required", 
