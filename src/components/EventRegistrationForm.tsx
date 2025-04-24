@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
+// Update the schema to ensure agreeToTerms is strictly true
 const registrationSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
@@ -47,7 +49,7 @@ export function EventRegistrationForm({ eventId, eventTitle, onSuccess }: EventR
       name: "",
       email: user?.email || "",
       phone: "",
-      agreeToTerms: false,
+      agreeToTerms: false, // This is now correctly typed as false initially
     },
   });
 
