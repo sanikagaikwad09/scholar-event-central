@@ -49,7 +49,8 @@ export function EventRegistrationForm({ eventId, eventTitle, onSuccess }: EventR
       name: "",
       email: user?.email || "",
       phone: "",
-      agreeToTerms: false, // This is now correctly typed as false initially
+      // Use 'undefined' initially to match the schema's true requirement
+      agreeToTerms: undefined,
     },
   });
 
