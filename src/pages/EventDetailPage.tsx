@@ -1,8 +1,8 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import MainLayout from "@/components/MainLayout";
 import { Button } from "@/components/ui/button";
+import { EventRegistrationForm } from "@/components/EventRegistrationForm";
 import {
   Card,
   CardContent,
@@ -15,7 +15,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Calendar, Clock, MapPin, Download, Users, Share } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
-// Sample events data
 const eventsData = [
   {
     id: "1",
@@ -77,14 +76,13 @@ const EventDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const [event, setEvent] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showRegistrationForm, setShowRegistrationForm] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    // In a real app, you would fetch the event data from your API
     const fetchEvent = async () => {
       setLoading(true);
       try {
-        // Simulate API request
         await new Promise(resolve => setTimeout(resolve, 500));
         
         const foundEvent = eventsData.find(e => e.id === id);
@@ -144,14 +142,12 @@ const EventDetailPage: React.FC = () => {
     <MainLayout>
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-6xl mx-auto">
-          {/* Breadcrumb */}
           <div className="text-sm text-gray-500 mb-6">
             <Link to="/events" className="hover:text-purple-600">Events</Link>
             <span className="mx-2">›</span>
             <span>{event.title}</span>
           </div>
           
-          {/* Event Header */}
           <div className="mb-8">
             <div className="relative h-80 rounded-xl overflow-hidden mb-6">
               <img 
@@ -194,9 +190,15 @@ const EventDetailPage: React.FC = () => {
                   <p className="text-gray-600">{event.organizer}</p>
                 </div>
                 <div className="mt-4 sm:mt-0 flex flex-wrap gap-3">
-                  <Button onClick={handleRegister} className="bg-purple-600 hover:bg-purple-700 btn-hover-effect">
-                    Register Now
-                  </Button>
+                  {showRegistrationForm ? (
+                    <Button onClick={() => setShowRegistrationForm(false)} variant="outline">
+                      Cancel Registration
+                    </Button>
+                  ) : (
+                    <Button onClick={() => setShowRegistrationForm(true)} className="bg-purple-600 hover:bg-purple-700">
+                      Register Now
+                    </Button>
+                  )}
                   <Button variant="outline" size="icon">
                     <Share className="h-4 w-4" />
                   </Button>
@@ -205,7 +207,17 @@ const EventDetailPage: React.FC = () => {
             </div>
           </div>
           
-          {/* Event Details Tabs */}
+          {showRegistrationForm && (
+            <div className="bg-white shadow-sm rounded-lg p-6 mb-8">
+              <h2 className="text-2xl font-semibold mb-6">Register for {event.title}</h2>
+              <EventRegistrationForm 
+                eventId={event.id} 
+                eventTitle={event.title}
+                onSuccess={() => setShowRegistrationForm(false)}
+              />
+            </div>
+          )}
+          
           <Tabs defaultValue="description" className="mb-12">
             <TabsList className="mb-6">
               <TabsTrigger value="description">Description</TabsTrigger>
@@ -244,7 +256,6 @@ const EventDetailPage: React.FC = () => {
             </TabsContent>
           </Tabs>
           
-          {/* Related Events */}
           <div>
             <h2 className="text-2xl font-semibold mb-4">You May Also Like</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

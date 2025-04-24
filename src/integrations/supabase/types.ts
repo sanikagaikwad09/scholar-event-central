@@ -80,6 +80,39 @@ export type Database = {
         }
         Relationships: []
       }
+      feedback: {
+        Row: {
+          comments: string
+          created_at: string
+          email: string
+          event_name: string
+          id: string
+          name: string
+          rating: string
+          user_id: string | null
+        }
+        Insert: {
+          comments: string
+          created_at?: string
+          email: string
+          event_name: string
+          id?: string
+          name: string
+          rating: string
+          user_id?: string | null
+        }
+        Update: {
+          comments?: string
+          created_at?: string
+          email?: string
+          event_name?: string
+          id?: string
+          name?: string
+          rating?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
