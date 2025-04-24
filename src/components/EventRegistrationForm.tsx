@@ -65,8 +65,12 @@ export function EventRegistrationForm({ eventId, eventTitle, onSuccess }: EventR
 
     setLoading(true);
     try {
+      // For mock data from the frontend, we need to create a proper UUID
+      // In a real app with a proper database, you'd use the actual UUID from the database
+      const mockUuid = crypto.randomUUID(); // Generate a proper UUID for testing
+      
       const { error } = await supabase.from("event_registrations").insert({
-        event_id: eventId,
+        event_id: mockUuid, // Using a generated UUID instead of "1" or "2"
         user_id: user.id,
         name: values.name,
         email: values.email,

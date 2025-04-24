@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { supabase } from "@/integrations/supabase/client";
 import MainLayout from "@/components/MainLayout";
 import {
   Card,
@@ -31,6 +32,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
 
 const feedbackSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -45,10 +47,11 @@ type FeedbackFormValues = z.infer<typeof feedbackSchema>;
 const FeedbackPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   // Sample events for the dropdown
   const events = [
-    { id: "1", name: "Tech Symposium 2025" },
+    { id: "1", name: "Tech Talks 2025" },
     { id: "2", name: "Annual Cultural Fest" },
     { id: "3", name: "Career Fair" },
     { id: "4", name: "Sports Tournament" },
@@ -60,7 +63,7 @@ const FeedbackPage: React.FC = () => {
     resolver: zodResolver(feedbackSchema),
     defaultValues: {
       name: "",
-      email: "",
+      email: user?.email || "",
       eventName: "",
       rating: "",
       comments: "",
@@ -70,11 +73,17 @@ const FeedbackPage: React.FC = () => {
   const onSubmit = async (data: FeedbackFormValues) => {
     setIsSubmitting(true);
     try {
-      // In a real app, you would send this data to your backend
-      console.log("Feedback form data:", data);
+      // Insert the feedback data into Supabase
+      const { error } = await supabase.from("feedback").insert({
+        user_id: user?.id || null,
+        name: data.name,
+        email: data.email,
+        event_name: data.eventName,
+        rating: data.rating,
+        comments: data.comments
+      });
       
-      // Simulate API request
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      if (error) throw error;
       
       toast({
         title: "Feedback Submitted",
@@ -83,9 +92,10 @@ const FeedbackPage: React.FC = () => {
       
       form.reset();
     } catch (error) {
+      console.error("Feedback submission error:", error);
       toast({
         title: "Submission Failed",
-        description: "There was a problem submitting your feedback. Please try again.",
+        description: error instanceof Error ? error.message : "There was a problem submitting your feedback. Please try again.",
         variant: "destructive",
       });
     } finally {
