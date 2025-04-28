@@ -1,7 +1,9 @@
 
-import { Link } from "react-router-dom";
+import { useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import MainLayout from "@/components/MainLayout";
 import { AuthForm } from "@/components/AuthForm";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Card,
   CardContent,
@@ -12,6 +14,16 @@ import {
 } from "@/components/ui/card";
 
 const AdminLoginPage = () => {
+  const { user, isAdmin } = useAuth();
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    // If user is logged in and is an admin, redirect to admin dashboard
+    if (user && isAdmin) {
+      navigate('/admin/dashboard');
+    }
+  }, [user, isAdmin, navigate]);
+
   return (
     <MainLayout>
       <div className="flex items-center justify-center min-h-[calc(100vh-200px)] py-12 px-4">

@@ -15,17 +15,36 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EventsList } from "@/components/admin/EventsList";
 import { EventForm } from "@/components/admin/EventForm";
+import { useToast } from "@/hooks/use-toast";
 
 const AdminDashboard = () => {
   const { user, isAdmin, isLoading } = useAuth();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("events-list");
+  const { toast } = useToast();
 
   useEffect(() => {
-    if (!isLoading && (!user || !isAdmin)) {
-      navigate('/admin/login');
+    // If still loading, wait
+    if (isLoading) {
+      return;
     }
-  }, [user, isAdmin, isLoading, navigate]);
+    
+    // If not logged in at all, redirect to admin login
+    if (!user) {
+      navigate('/admin/login');
+      return;
+    }
+    
+    // If logged in but not admin, show error and redirect
+    if (user && !isAdmin) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have admin privileges to access this page",
+        variant: "destructive",
+      });
+      navigate('/');
+    }
+  }, [user, isAdmin, isLoading, navigate, toast]);
 
   if (isLoading) {
     return (
@@ -41,6 +60,11 @@ const AdminDashboard = () => {
         </div>
       </MainLayout>
     );
+  }
+
+  // Don't render anything if not an admin
+  if (!isAdmin) {
+    return null;
   }
 
   return (
