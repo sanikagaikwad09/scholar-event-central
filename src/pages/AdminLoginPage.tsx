@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/card";
 
 const AdminLoginPage = () => {
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isLoading } = useAuth();
   const navigate = useNavigate();
   
   useEffect(() => {

@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -70,20 +69,46 @@ export function AuthForm({ type, isAdminLogin = false }: AuthFormProps) {
     setIsLoading(true);
     try {
       if (type === 'login') {
-        const { data: authData, error } = await supabase.auth.signInWithPassword({
-          email: data.email,
-          password: data.password,
-        });
+        // Special case for admin login
+        if (isAdminLogin && data.email === 'admin@aimsr.edu.in') {
+          const { data: authData, error } = await supabase.auth.signInWithPassword({
+            email: data.email,
+            password: data.password,
+          });
 
-        if (error) {
-          // Special handling for "Email not confirmed" error
-          if (error.message === "Email not confirmed") {
-            // For admin login, allow bypassing email verification
-            if (isAdminLogin && data.email === 'admin@aimsr.edu.in') {
-              // Try to handle admin with special case
+          if (error) {
+            if (error.message === "Email not confirmed") {
+              // For admin login with the special email, bypass email verification
               await handleAdminLogin(data as LoginFormValues);
             } else {
-              // Send a new confirmation email using the correct method
+              throw error;
+            }
+          } else {
+            // Check if user is admin
+            const { data: userData, error: userError } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', authData.user?.id)
+              .single();
+
+            if (userError) throw userError;
+            
+            if (userData?.role !== 'admin') {
+              throw new Error("Access denied. Admin privileges required.");
+            }
+            
+            toast({ title: "Admin login successful!" });
+            navigate('/admin/dashboard');
+          }
+        } else {
+          // Regular login
+          const { data: authData, error } = await supabase.auth.signInWithPassword({
+            email: data.email,
+            password: data.password,
+          });
+
+          if (error) {
+            if (error.message === "Email not confirmed") {
               await supabase.auth.resend({
                 type: 'signup',
                 email: data.email,
@@ -91,37 +116,19 @@ export function AuthForm({ type, isAdminLogin = false }: AuthFormProps) {
               
               toast({ 
                 title: "Email verification required", 
-                description: "We've sent you a new verification email. Please check your inbox to confirm your email and try again.",
+                description: "We've sent you a verification email. Please check your inbox to confirm your email and try again.",
                 variant: "default"
               });
+            } else {
+              throw error;
             }
-            setIsLoading(false);
-            return;
+          } else {
+            toast({ title: "Login successful!" });
+            navigate('/');
           }
-          throw error;
-        }
-
-        if (isAdminLogin || data.email === 'admin@aimsr.edu.in') {
-          // Check if user is admin
-          const { data: userData, error: userError } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', authData.user?.id)
-            .single();
-
-          if (userError) throw userError;
-          
-          if (userData?.role !== 'admin') {
-            throw new Error("Access denied. Admin privileges required.");
-          }
-          
-          toast({ title: "Admin login successful!" });
-          navigate('/admin/dashboard');
-        } else {
-          toast({ title: "Login successful!" });
-          navigate('/');
         }
       } else {
+        // Registration process
         const registerData = data as RegisterFormValues;
         
         // Special handling for admin account creation
@@ -173,30 +180,71 @@ export function AuthForm({ type, isAdminLogin = false }: AuthFormProps) {
     }
   };
 
-  // Special handler for admin login to bypass email verification if needed
+  // Special handler for admin login to bypass email verification
   const handleAdminLogin = async (data: LoginFormValues) => {
     try {
-      // First try to get the admin user
-      const { data: userData, error } = await supabase
+      // Try to fetch the admin user directly from profiles
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('id, role')
         .eq('email', 'admin@aimsr.edu.in')
         .single();
-
-      if (error) {
-        console.error("Error finding admin:", error);
-        throw new Error("Admin account not found. Please contact support.");
+      
+      if (profileError) {
+        console.log("Trying to create admin user since profile not found");
+        // Admin user doesn't exist yet, try to create it
+        const { data: authData, error: signUpError } = await supabase.auth.signUp({
+          email: data.email,
+          password: data.password,
+          options: {
+            data: {
+              first_name: 'Admin',
+              last_name: 'User',
+              role: 'admin',
+            }
+          }
+        });
+        
+        if (signUpError) throw signUpError;
+        
+        // After signup, try to sign in directly to get session
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password,
+        });
+        
+        if (signInError) throw signInError;
+        
+        toast({ title: "Admin account created and logged in!" });
+        navigate('/admin/dashboard');
+        return;
       }
 
-      if (userData && userData.role === 'admin') {
-        toast({ title: "Admin login successful!" });
-        navigate('/admin/dashboard');
-        return true;
+      // If profile exists but we're here due to email verification issues
+      if (profileData && profileData.role === 'admin') {
+        // Try to sign in directly
+        const { error } = await supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password,
+        });
+        
+        if (!error) {
+          toast({ title: "Admin login successful!" });
+          navigate('/admin/dashboard');
+          return true;
+        } else {
+          throw error;
+        }
       } else {
-        throw new Error("Invalid admin credentials.");
+        throw new Error("Invalid admin credentials or not an admin account.");
       }
     } catch (error) {
       console.error("Admin login error:", error);
+      toast({
+        title: "Admin login failed",
+        description: error instanceof Error ? error.message : "An error occurred",
+        variant: "destructive",
+      });
       throw error;
     }
   };
