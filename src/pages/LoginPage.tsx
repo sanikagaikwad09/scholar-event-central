@@ -48,9 +48,14 @@ const LoginPage = () => {
                 Sign up
               </Link>
             </div>
-            <div className="text-center text-sm">
-              Are you an admin?{" "}
-              <Link to="/admin/login" className="text-purple-600 hover:text-purple-800 font-medium">
+            <div className="text-center text-sm space-y-2">
+              <div>Are you an admin?</div>
+              <div className="text-xs text-gray-500">
+                Admin Credentials:<br />
+                Username: admin@aimsr.edu.in<br />
+                Password: 123456
+              </div>
+              <Link to="/admin/login" className="text-purple-600 hover:text-purple-800 font-medium block mt-1">
                 Admin Login
               </Link>
             </div>
