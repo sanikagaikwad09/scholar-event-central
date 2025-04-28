@@ -63,7 +63,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single();
       
       if (error) throw error;
+      
+      // Check if the user has the admin role
       setIsAdmin(data?.role === 'admin');
+      console.log("User role check:", data?.role, "isAdmin:", data?.role === 'admin');
     } catch (error) {
       console.error("Error checking user role:", error);
       setIsAdmin(false);

@@ -48,11 +48,15 @@ export function AuthForm({ type, isAdminLogin = false }: AuthFormProps) {
   const { toast } = useToast();
   const navigate = useNavigate();
 
+  // Set default values for the admin login
+  const defaultEmail = isAdminLogin ? 'admin@aimsr.edu.in' : '';
+  const defaultPassword = isAdminLogin ? '123456' : '';
+
   const form = useForm<LoginFormValues | RegisterFormValues>({
     resolver: zodResolver(type === 'login' ? loginSchema : registerSchema),
     defaultValues: type === 'login' ? {
-      email: '',
-      password: '',
+      email: defaultEmail,
+      password: defaultPassword,
     } : {
       email: '',
       password: '',
@@ -113,19 +117,38 @@ export function AuthForm({ type, isAdminLogin = false }: AuthFormProps) {
         }
       } else {
         const registerData = data as RegisterFormValues;
-        const { error } = await supabase.auth.signUp({
-          email: registerData.email,
-          password: registerData.password,
-          options: {
-            data: {
-              first_name: registerData.firstName,
-              last_name: registerData.lastName,
-              role: registerData.role,
-            }
-          }
-        });
         
-        if (error) throw error;
+        // Special handling for admin account creation
+        if (registerData.email === 'admin@aimsr.edu.in') {
+          const { error } = await supabase.auth.signUp({
+            email: registerData.email,
+            password: registerData.password,
+            options: {
+              data: {
+                first_name: registerData.firstName,
+                last_name: registerData.lastName,
+                role: 'admin', // Force role to admin for this special email
+              }
+            }
+          });
+          
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.auth.signUp({
+            email: registerData.email,
+            password: registerData.password,
+            options: {
+              data: {
+                first_name: registerData.firstName,
+                last_name: registerData.lastName,
+                role: registerData.role,
+              }
+            }
+          });
+          
+          if (error) throw error;
+        }
+        
         toast({ 
           title: "Registration successful!", 
           description: "You can now log in with your credentials." 
