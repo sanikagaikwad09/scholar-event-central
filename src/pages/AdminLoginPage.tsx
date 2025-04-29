@@ -1,5 +1,5 @@
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import MainLayout from "@/components/MainLayout";
 import { AuthForm } from "@/components/AuthForm";
@@ -12,17 +12,28 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 
 const AdminLoginPage = () => {
   const { user, isAdmin, isLoading } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isRedirecting, setIsRedirecting] = useState(false);
   
   useEffect(() => {
     // If user is logged in and is an admin, redirect to admin dashboard
     if (user && isAdmin) {
-      navigate('/admin/dashboard');
+      setIsRedirecting(true);
+      toast({ 
+        title: "Admin login successful",
+        description: "Redirecting to admin dashboard..."
+      });
+      // Add a small delay to ensure the toast is shown before redirect
+      setTimeout(() => {
+        navigate('/admin/dashboard');
+      }, 500);
     }
-  }, [user, isAdmin, navigate]);
+  }, [user, isAdmin, navigate, toast]);
 
   return (
     <MainLayout>

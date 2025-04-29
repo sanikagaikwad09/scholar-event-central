@@ -1,9 +1,12 @@
+
 import { useState } from 'react';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Form,
   FormControl,
@@ -21,7 +24,6 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useNavigate } from 'react-router-dom';
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -46,6 +48,7 @@ export function AuthForm({ type, isAdminLogin = false }: AuthFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
 
   // Set default values for the admin login
   const defaultEmail = isAdminLogin ? 'admin@aimsr.edu.in' : '';
@@ -71,35 +74,8 @@ export function AuthForm({ type, isAdminLogin = false }: AuthFormProps) {
       if (type === 'login') {
         // Special case for admin login
         if (isAdminLogin && data.email === 'admin@aimsr.edu.in') {
-          const { data: authData, error } = await supabase.auth.signInWithPassword({
-            email: data.email,
-            password: data.password,
-          });
-
-          if (error) {
-            if (error.message === "Email not confirmed") {
-              // For admin login with the special email, bypass email verification
-              await handleAdminLogin(data as LoginFormValues);
-            } else {
-              throw error;
-            }
-          } else {
-            // Check if user is admin
-            const { data: userData, error: userError } = await supabase
-              .from('profiles')
-              .select('role')
-              .eq('id', authData.user?.id)
-              .single();
-
-            if (userError) throw userError;
-            
-            if (userData?.role !== 'admin') {
-              throw new Error("Access denied. Admin privileges required.");
-            }
-            
-            toast({ title: "Admin login successful!" });
-            navigate('/admin/dashboard');
-          }
+          console.log("Attempting admin login...");
+          await handleAdminLogin(data as LoginFormValues);
         } else {
           // Regular login
           const { data: authData, error } = await supabase.auth.signInWithPassword({
@@ -183,60 +159,80 @@ export function AuthForm({ type, isAdminLogin = false }: AuthFormProps) {
   // Special handler for admin login to bypass email verification
   const handleAdminLogin = async (data: LoginFormValues) => {
     try {
-      // Try to fetch the admin user directly from profiles
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('id, role')
-        .eq('email', 'admin@aimsr.edu.in')
-        .single();
+      console.log("Handling admin login...");
       
-      if (profileError) {
-        console.log("Trying to create admin user since profile not found");
-        // Admin user doesn't exist yet, try to create it
-        const { data: authData, error: signUpError } = await supabase.auth.signUp({
-          email: data.email,
-          password: data.password,
-          options: {
-            data: {
-              first_name: 'Admin',
-              last_name: 'User',
-              role: 'admin',
-            }
-          }
-        });
+      // First try normal sign in
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
+      
+      if (!signInError) {
+        console.log("Admin sign in successful via normal flow");
         
-        if (signUpError) throw signUpError;
+        // Check if the user is actually an admin
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', signInData.user?.id)
+          .single();
         
-        // After signup, try to sign in directly to get session
-        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-          email: data.email,
-          password: data.password,
-        });
+        if (profileError) {
+          console.error("Profile fetch error:", profileError);
+          throw new Error("Could not verify admin status");
+        }
         
-        if (signInError) throw signInError;
-        
-        toast({ title: "Admin account created and logged in!" });
-        navigate('/admin/dashboard');
-        return;
-      }
-
-      // If profile exists but we're here due to email verification issues
-      if (profileData && profileData.role === 'admin') {
-        // Try to sign in directly
-        const { error } = await supabase.auth.signInWithPassword({
-          email: data.email,
-          password: data.password,
-        });
-        
-        if (!error) {
+        if (profileData?.role === 'admin') {
           toast({ title: "Admin login successful!" });
           navigate('/admin/dashboard');
-          return true;
+          return;
         } else {
-          throw error;
+          throw new Error("Access denied. Admin privileges required.");
         }
-      } else {
-        throw new Error("Invalid admin credentials or not an admin account.");
+      }
+      
+      // If email not confirmed or other error, try to create admin account
+      if (signInError) {
+        console.log("Admin sign in error:", signInError);
+        
+        if (signInError.message === "Email not confirmed") {
+          console.log("Email not confirmed, trying to create admin user");
+          
+          // Try to create admin user
+          const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+            email: data.email,
+            password: data.password,
+            options: {
+              data: {
+                first_name: 'Admin',
+                last_name: 'User',
+                role: 'admin',
+              }
+            }
+          });
+          
+          if (signUpError) {
+            console.error("Admin signup error:", signUpError);
+            throw signUpError;
+          }
+          
+          // After signup, try to sign in directly
+          const { data: adminSignIn, error: adminSignInError } = await supabase.auth.signInWithPassword({
+            email: data.email,
+            password: data.password,
+          });
+          
+          if (adminSignInError) {
+            console.error("Admin sign in after signup error:", adminSignInError);
+            throw adminSignInError;
+          }
+          
+          toast({ title: "Admin account created and logged in!" });
+          navigate('/admin/dashboard');
+          return;
+        } else {
+          throw signInError;
+        }
       }
     } catch (error) {
       console.error("Admin login error:", error);
