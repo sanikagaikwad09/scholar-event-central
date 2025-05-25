@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -53,18 +54,19 @@ export function EventRegistrationForm({ eventId, eventTitle, onSuccess }: EventR
   });
 
   const onSubmit = async (values: RegistrationFormValues) => {
+    // Check login first
     if (!user) {
       toast({
-        title: "Please log in to register for events",
+        title: "Please log in to register for the event",
         variant: "destructive",
       });
       return;
     }
     setLoading(true);
     try {
-      // Use the real eventId passed in props
+      // Fix: event_id must be correct type (uuid)
       const { error } = await supabase.from("event_registrations").insert({
-        event_id: eventId, // Use real event id, not a random UUID!
+        event_id: eventId,
         user_id: user.id,
         name: values.name,
         email: values.email,
