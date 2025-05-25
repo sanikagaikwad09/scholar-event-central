@@ -54,17 +54,17 @@ export function EventRegistrationForm({ eventId, eventTitle, onSuccess }: EventR
   });
 
   const onSubmit = async (values: RegistrationFormValues) => {
-    // Check login first
     if (!user) {
       toast({
         title: "Please log in to register for the event",
+        description: "You must be logged in to complete event registration.",
         variant: "destructive",
       });
       return;
     }
     setLoading(true);
     try {
-      // Enforce correct UUID for event_id/user_id
+      // Insert with correct event/user/fields
       const { error } = await supabase.from("event_registrations").insert([{
         event_id: eventId,
         user_id: user.id,
@@ -72,18 +72,32 @@ export function EventRegistrationForm({ eventId, eventTitle, onSuccess }: EventR
         email: values.email,
         phone: values.phone,
       }]);
-      if (error) throw error;
+      if (error) {
+        if (
+          error.message &&
+          (error.message.includes("duplicate key") || error.message.includes("already exists"))
+        ) {
+          toast({
+            title: "Already registered",
+            description: "You have already registered for this event.",
+            variant: "destructive",
+          });
+        } else {
+          throw error;
+        }
+        return;
+      }
       setShowConfirmation(true);
       if (onSuccess) onSuccess();
       toast({
         title: "Registration successful!",
-        description: `You have been registered for ${eventTitle}`,
+        description: `You have been registered for ${eventTitle}.`,
       });
     } catch (error) {
       console.error("Registration error:", error);
       toast({
         title: "Registration failed",
-        description: error instanceof Error ? error.message : "An error occurred",
+        description: error instanceof Error ? error.message : "An error occurred during registration.",
         variant: "destructive",
       });
     } finally {
@@ -108,7 +122,7 @@ export function EventRegistrationForm({ eventId, eventTitle, onSuccess }: EventR
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
             name="email"
@@ -122,7 +136,7 @@ export function EventRegistrationForm({ eventId, eventTitle, onSuccess }: EventR
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
             name="phone"
@@ -136,7 +150,7 @@ export function EventRegistrationForm({ eventId, eventTitle, onSuccess }: EventR
               </FormItem>
             )}
           />
-          
+
           <FormField
             control={form.control}
             name="agreeToTerms"
@@ -157,7 +171,7 @@ export function EventRegistrationForm({ eventId, eventTitle, onSuccess }: EventR
               </FormItem>
             )}
           />
-          
+
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? "Submitting..." : `Register for ${eventTitle}`}
           </Button>

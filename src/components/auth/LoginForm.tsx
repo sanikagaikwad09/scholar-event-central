@@ -22,6 +22,16 @@ interface LoginFormProps {
   isAdminLogin?: boolean;
 }
 
+// Utility to fully clear out all auth tokens/sessions
+const cleanupAuthState = () => {
+  Object.keys(localStorage).forEach((key) => {
+    if (key.startsWith("supabase.auth.") || key.includes("sb-")) localStorage.removeItem(key);
+  });
+  Object.keys(sessionStorage).forEach((key) => {
+    if (key.startsWith("supabase.auth.") || key.includes("sb-")) sessionStorage.removeItem(key);
+  });
+};
+
 export function LoginForm({ isAdminLogin = false }: LoginFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -39,20 +49,11 @@ export function LoginForm({ isAdminLogin = false }: LoginFormProps) {
     },
   });
 
-  const cleanupAuthState = () => {
-    Object.keys(localStorage).forEach((key) => {
-      if (key.startsWith("supabase.auth.") || key.includes("sb-")) localStorage.removeItem(key);
-    });
-    Object.keys(sessionStorage).forEach((key) => {
-      if (key.startsWith("supabase.auth.") || key.includes("sb-")) sessionStorage.removeItem(key);
-    });
-  };
-
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
-      // SPECIAL CASE: Bypass email confirmation for admin login!
-      if (isAdminLogin && data.email === "admin@aimsr.edu.in") {
+      // ADMIN LOGIN PATH: bypass email verification, force dashboard on success
+      if (isAdminLogin && data.email === "admin@aimsr.edu.in" && data.password === "123456") {
         cleanupAuthState();
         try {
           await supabase.auth.signOut({ scope: "global" });
@@ -64,25 +65,23 @@ export function LoginForm({ isAdminLogin = false }: LoginFormProps) {
         if (signInError) {
           throw signInError;
         }
-        // Force role check and redirect to dashboard if admin
+        // Skip email confirmation check, force profile role check
         const { data: profile, error: pError } = await supabase
           .from("profiles")
           .select("role")
           .eq("id", signInData.user.id)
           .maybeSingle();
         if (profile?.role === "admin") {
-          toast({ title: "Admin login successful!" });
+          toast({ title: "Admin login successful!", description: "Redirecting to dashboard..." });
           window.location.href = "/admin/dashboard";
           return;
         } else {
           throw new Error("Access denied. Admin privileges required.");
         }
       } else {
-        // For non-admin logins:
+        // NORMAL login: require email confirmation (unless admin)
         cleanupAuthState();
-        try {
-          await supabase.auth.signOut({ scope: "global" });
-        } catch {}
+        try { await supabase.auth.signOut({ scope: "global" }); } catch {}
         const { data: authData, error } = await supabase.auth.signInWithPassword({
           email: data.email,
           password: data.password,
@@ -94,6 +93,7 @@ export function LoginForm({ isAdminLogin = false }: LoginFormProps) {
             toast({
               title: "Email verification required",
               description: "We've sent you a verification email. Please check your inbox.",
+              variant: "destructive",
             });
           } else {
             throw error;
