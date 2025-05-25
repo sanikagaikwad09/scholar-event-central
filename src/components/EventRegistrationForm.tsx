@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -49,7 +48,6 @@ export function EventRegistrationForm({ eventId, eventTitle, onSuccess }: EventR
       name: "",
       email: user?.email || "",
       phone: "",
-      // Use 'undefined' initially to match the schema's true requirement
       agreeToTerms: undefined,
     },
   });
@@ -62,23 +60,17 @@ export function EventRegistrationForm({ eventId, eventTitle, onSuccess }: EventR
       });
       return;
     }
-
     setLoading(true);
     try {
-      // For mock data from the frontend, we need to create a proper UUID
-      // In a real app with a proper database, you'd use the actual UUID from the database
-      const mockUuid = crypto.randomUUID(); // Generate a proper UUID for testing
-      
+      // Use the real eventId passed in props
       const { error } = await supabase.from("event_registrations").insert({
-        event_id: mockUuid, // Using a generated UUID instead of "1" or "2"
+        event_id: eventId, // Use real event id, not a random UUID!
         user_id: user.id,
         name: values.name,
         email: values.email,
         phone: values.phone,
       });
-
       if (error) throw error;
-
       setShowConfirmation(true);
       if (onSuccess) onSuccess();
     } catch (error) {

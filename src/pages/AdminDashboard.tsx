@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MainLayout from "@/components/MainLayout";
@@ -24,18 +23,11 @@ const AdminDashboard = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // If still loading, wait
-    if (isLoading) {
-      return;
-    }
-    
-    // If not logged in at all, redirect to admin login
+    if (isLoading) return;
     if (!user) {
       navigate('/admin/login');
       return;
     }
-    
-    // If logged in but not admin, show error and redirect
     if (user && !isAdmin) {
       toast({
         title: "Access Denied",
@@ -62,16 +54,12 @@ const AdminDashboard = () => {
     );
   }
 
-  // Don't render anything if not an admin
-  if (!isAdmin) {
-    return null;
-  }
+  if (!isAdmin) return null;
 
   return (
     <MainLayout>
       <div className="container mx-auto py-6 px-4">
         <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
-        
         <Tabs defaultValue="events-list" value={activeTab} onValueChange={setActiveTab}>
           <div className="flex justify-between items-center mb-6">
             <TabsList>
@@ -79,15 +67,21 @@ const AdminDashboard = () => {
               <TabsTrigger value="add-event">Add Event</TabsTrigger>
             </TabsList>
           </div>
-          
           <TabsContent value="events-list" className="space-y-4">
             <EventsList onEditEvent={() => setActiveTab("add-event")} />
           </TabsContent>
-          
           <TabsContent value="add-event">
             <EventForm onSuccess={() => setActiveTab("events-list")} />
           </TabsContent>
         </Tabs>
+        <div className="mt-10 text-gray-700">
+          <strong>Dashboard Roadmap:</strong>
+          <ul className="list-disc pl-6">
+            <li>Upcoming: Registered students list</li>
+            <li>Upcoming: Students who registered for events</li>
+            <li>Upcoming: Gallery management</li>
+          </ul>
+        </div>
       </div>
     </MainLayout>
   );
