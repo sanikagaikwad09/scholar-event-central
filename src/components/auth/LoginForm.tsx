@@ -51,7 +51,7 @@ export function LoginForm({ isAdminLogin = false }: LoginFormProps) {
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
-      // SPECIAL ADMIN LOGIN - ignore email verification
+      // SPECIAL CASE: Bypass email confirmation for admin login!
       if (isAdminLogin && data.email === "admin@aimsr.edu.in") {
         cleanupAuthState();
         try {
@@ -63,23 +63,22 @@ export function LoginForm({ isAdminLogin = false }: LoginFormProps) {
         });
         if (signInError) {
           throw signInError;
+        }
+        // Force role check and redirect to dashboard if admin
+        const { data: profile, error: pError } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", signInData.user.id)
+          .maybeSingle();
+        if (profile?.role === "admin") {
+          toast({ title: "Admin login successful!" });
+          window.location.href = "/admin/dashboard";
+          return;
         } else {
-          // Confirm admin privileges
-          const { data: profile, error: pError } = await supabase
-            .from("profiles")
-            .select("role")
-            .eq("id", signInData.user.id)
-            .maybeSingle();
-          if (profile?.role === "admin") {
-            toast({ title: "Admin login successful!" });
-            window.location.href = "/admin/dashboard";
-            return;
-          } else {
-            throw new Error("Access denied. Admin privileges required.");
-          }
+          throw new Error("Access denied. Admin privileges required.");
         }
       } else {
-        // REGULAR LOGIN with email verification flow
+        // For non-admin logins:
         cleanupAuthState();
         try {
           await supabase.auth.signOut({ scope: "global" });
@@ -89,6 +88,7 @@ export function LoginForm({ isAdminLogin = false }: LoginFormProps) {
           password: data.password,
         });
         if (error) {
+          // Only require email confirmation for non-admins
           if (error.message === "Email not confirmed") {
             await supabase.auth.resend({ type: "signup", email: data.email });
             toast({
@@ -119,6 +119,7 @@ export function LoginForm({ isAdminLogin = false }: LoginFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        {/* Email input */}
         <FormField
           control={form.control}
           name="email"
@@ -132,6 +133,7 @@ export function LoginForm({ isAdminLogin = false }: LoginFormProps) {
             </FormItem>
           )}
         />
+        {/* Password input */}
         <FormField
           control={form.control}
           name="password"

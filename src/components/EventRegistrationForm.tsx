@@ -64,17 +64,21 @@ export function EventRegistrationForm({ eventId, eventTitle, onSuccess }: EventR
     }
     setLoading(true);
     try {
-      // Fix: event_id must be correct type (uuid)
-      const { error } = await supabase.from("event_registrations").insert({
+      // Enforce correct UUID for event_id/user_id
+      const { error } = await supabase.from("event_registrations").insert([{
         event_id: eventId,
         user_id: user.id,
         name: values.name,
         email: values.email,
         phone: values.phone,
-      });
+      }]);
       if (error) throw error;
       setShowConfirmation(true);
       if (onSuccess) onSuccess();
+      toast({
+        title: "Registration successful!",
+        description: `You have been registered for ${eventTitle}`,
+      });
     } catch (error) {
       console.error("Registration error:", error);
       toast({
