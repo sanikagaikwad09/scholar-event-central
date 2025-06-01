@@ -19,11 +19,6 @@ import AboutPage from "./pages/AboutPage";
 import FeedbackPage from "./pages/FeedbackPage";
 import NotFound from "./pages/NotFound";
 
-// Define our ProtectedRoute component for admin routes
-const ProtectedAdminRoute = ({ children }: { children: React.ReactNode }) => {
-  return <AuthProvider>{children}</AuthProvider>;
-};
-
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -38,14 +33,7 @@ const App = () => (
             <Route path="/login" element={<LoginPage />} />
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/admin/login" element={<AdminLoginPage />} />
-            <Route 
-              path="/admin/dashboard" 
-              element={
-                <ProtectedAdminRoute>
-                  <AdminDashboard />
-                </ProtectedAdminRoute>
-              } 
-            />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
             <Route path="/events" element={<EventsPage />} />
             <Route path="/events/:id" element={<EventDetailPage />} />
             <Route path="/gallery" element={<GalleryPage />} />

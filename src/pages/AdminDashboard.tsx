@@ -25,12 +25,26 @@ const AdminDashboard = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    if (isLoading) return;
+    console.log("AdminDashboard - Auth state:", { user: user?.email, isAdmin, isLoading });
+    
+    if (isLoading) {
+      console.log("Still loading auth state...");
+      return;
+    }
+    
     if (!user) {
+      console.log("No user found, redirecting to admin login");
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to access the admin dashboard",
+        variant: "destructive",
+      });
       navigate('/admin/login');
       return;
     }
+    
     if (user && !isAdmin) {
+      console.log("User found but not admin, redirecting to admin login");
       toast({
         title: "Access Denied",
         description: "You don't have admin privileges to access this page",
@@ -56,12 +70,30 @@ const AdminDashboard = () => {
     );
   }
 
-  if (!isAdmin) return null;
+  if (!user || !isAdmin) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto py-12">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex justify-center items-center h-40">
+                <p>Access denied. Redirecting...</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
       <div className="container mx-auto py-6 px-4">
-        <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <p className="text-sm text-gray-600">Welcome, {user.email}</p>
+        </div>
+        
         <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
           <div className="mb-6">
             <TabsList className="grid w-full grid-cols-6">

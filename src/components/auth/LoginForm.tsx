@@ -72,10 +72,10 @@ export function LoginForm({ isAdminLogin = false }: LoginFormProps) {
           if (signInError.message === "Email not confirmed") {
             toast({
               title: "Admin Login Successful",
-              description: "Bypassing email confirmation for admin user.",
+              description: "Redirecting to admin dashboard...",
             });
-            // Use React Router navigation instead of window.location
-            navigate("/admin/dashboard");
+            // Force navigation to admin dashboard
+            window.location.href = "/admin/dashboard";
             return;
           }
         } else {
@@ -109,7 +109,8 @@ export function LoginForm({ isAdminLogin = false }: LoginFormProps) {
               title: "Admin login successful!", 
               description: "Redirecting to dashboard..." 
             });
-            navigate("/admin/dashboard");
+            // Force redirect to admin dashboard
+            window.location.href = "/admin/dashboard";
             return;
           } else {
             throw new Error("Access denied. Admin privileges required.");

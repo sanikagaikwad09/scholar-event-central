@@ -26,7 +26,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
+        console.log("Auth state change:", event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -36,11 +37,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           setIsAdmin(false);
         }
+        setIsLoading(false);
       }
     );
 
     // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log("Initial session check:", session?.user?.email);
       setSession(session);
       setUser(session?.user ?? null);
       
@@ -62,11 +65,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .eq('id', userId)
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error("Error checking user role:", error);
+        setIsAdmin(false);
+        return;
+      }
       
       // Check if the user has the admin role
-      setIsAdmin(data?.role === 'admin');
-      console.log("User role check:", data?.role, "isAdmin:", data?.role === 'admin');
+      const userIsAdmin = data?.role === 'admin';
+      setIsAdmin(userIsAdmin);
+      console.log("User role check:", data?.role, "isAdmin:", userIsAdmin);
     } catch (error) {
       console.error("Error checking user role:", error);
       setIsAdmin(false);
@@ -76,6 +84,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
+      setSession(null);
+      setUser(null);
+      setIsAdmin(false);
       navigate('/');
     } catch (error) {
       console.error("Error signing out:", error);
