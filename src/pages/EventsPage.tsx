@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import MainLayout from "@/components/MainLayout";
 import { Input } from "@/components/ui/input";
@@ -18,84 +18,18 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Grid2X2, List, Calendar, Search } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
-// Sample events data
-const eventsData = [
-  {
-    id: 1,
-    title: "Tech Symposium 2025",
-    date: "May 15, 2025",
-    image: "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
-    category: "Technology",
-    description: "A full-day symposium featuring tech talks, workshops, and networking opportunities with industry professionals.",
-    location: "Main Auditorium"
-  },
-  {
-    id: 2,
-    title: "Annual Cultural Fest",
-    date: "June 5-7, 2025",
-    image: "https://images.unsplash.com/photo-1501281668745-f7f57925c3b4?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
-    category: "Cultural",
-    description: "Three days of music, dance, art, and cultural celebrations featuring performances from students and guest artists.",
-    location: "Campus Grounds"
-  },
-  {
-    id: 3,
-    title: "Career Fair",
-    date: "April 28, 2025",
-    image: "https://images.unsplash.com/photo-1540575467063-178a50c2df87?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
-    category: "Career",
-    description: "Meet recruiters from top companies and explore internship and job opportunities in various industries.",
-    location: "Student Center"
-  },
-  {
-    id: 4,
-    title: "Sports Tournament",
-    date: "May 22-24, 2025",
-    image: "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
-    category: "Sports",
-    description: "Inter-college sports competition featuring basketball, soccer, tennis, and swimming events.",
-    location: "Sports Complex"
-  },
-  {
-    id: 5,
-    title: "Research Symposium",
-    date: "June 12, 2025",
-    image: "https://images.unsplash.com/photo-1507842217343-583bb7270b66?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
-    category: "Academic",
-    description: "Showcase of student and faculty research projects with presentations and poster sessions.",
-    location: "Science Building"
-  },
-  {
-    id: 6,
-    title: "Alumni Networking Night",
-    date: "July 8, 2025",
-    image: "https://images.unsplash.com/photo-1528605248644-14dd04022da1?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
-    category: "Networking",
-    description: "Connect with successful alumni and build your professional network while enjoying refreshments.",
-    location: "Business School Lounge"
-  },
-  {
-    id: 7,
-    title: "Hackathon 2025",
-    date: "May 30-31, 2025",
-    image: "https://images.unsplash.com/photo-1504384764586-bb4cdc1707b0?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
-    category: "Technology",
-    description: "48-hour coding competition to build innovative solutions to real-world problems. Open to all skill levels.",
-    location: "Engineering Building"
-  },
-  {
-    id: 8,
-    title: "Volunteer Day",
-    date: "April 22, 2025",
-    image: "https://images.unsplash.com/photo-1559027615-cd4628902d4a?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
-    category: "Community",
-    description: "Join fellow students in community service projects around campus and the local area.",
-    location: "Campus Quad"
-  }
-];
+interface Event {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  location: string;
+  image_url?: string;
+}
 
 // Categories for filtering
 const categories = [
@@ -110,19 +44,63 @@ const categories = [
 ];
 
 const EventsPage: React.FC = () => {
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [viewMode, setViewMode] = useState("grid");
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
+
+  const fetchEvents = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("events")
+        .select("*")
+        .order('date', { ascending: true });
+      
+      if (error) throw error;
+      
+      setEvents(data || []);
+    } catch (error) {
+      console.error("Error fetching events:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load events",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Filter events based on search query and category
-  const filteredEvents = eventsData.filter(event => {
+  const filteredEvents = events.filter(event => {
     const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                          event.description.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesCategory = selectedCategory === "All Categories" || event.category === selectedCategory;
+    const matchesCategory = selectedCategory === "All Categories" || true; // For now, show all since we don't have categories in DB
     
     return matchesSearch && matchesCategory;
   });
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="container mx-auto px-4 py-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center py-12">
+              <h3 className="text-lg font-medium text-gray-900">Loading events...</h3>
+            </div>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
@@ -191,7 +169,7 @@ const EventsPage: React.FC = () => {
           {filteredEvents.length === 0 ? (
             <div className="text-center py-12">
               <h3 className="text-lg font-medium text-gray-900">No events found</h3>
-              <p className="mt-1 text-gray-500">Try adjusting your search or filter to find what you're looking for.</p>
+              <p className="mt-1 text-gray-500">Try adjusting your search or check back later for new events.</p>
             </div>
           ) : (
             <>
@@ -202,7 +180,7 @@ const EventsPage: React.FC = () => {
                       <Card className="overflow-hidden h-full hover-card-effect">
                         <div className="h-48 overflow-hidden">
                           <img
-                            src={event.image}
+                            src={event.image_url || "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"}
                             alt={event.title}
                             className="w-full h-full object-cover"
                           />
@@ -210,13 +188,19 @@ const EventsPage: React.FC = () => {
                         <CardHeader className="pb-2">
                           <CardTitle className="text-xl">{event.title}</CardTitle>
                           <span className="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
-                            {event.category}
+                            Event
                           </span>
                         </CardHeader>
                         <CardContent className="pb-2">
                           <div className="flex items-center text-gray-500 mb-2">
                             <Calendar className="h-4 w-4 mr-1" />
-                            <span className="text-sm">{event.date}</span>
+                            <span className="text-sm">
+                              {new Date(event.date).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })}
+                            </span>
                           </div>
                           <p className="text-gray-600 line-clamp-2">{event.description}</p>
                         </CardContent>
@@ -235,7 +219,7 @@ const EventsPage: React.FC = () => {
                         <div className="flex flex-col md:flex-row">
                           <div className="md:w-1/4 h-48 md:h-auto">
                             <img
-                              src={event.image}
+                              src={event.image_url || "https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60"}
                               alt={event.title}
                               className="w-full h-full object-cover"
                             />
@@ -244,12 +228,18 @@ const EventsPage: React.FC = () => {
                             <div className="mb-2">
                               <h3 className="text-xl font-semibold">{event.title}</h3>
                               <span className="inline-block bg-purple-100 text-purple-800 text-xs px-2 py-1 rounded-full">
-                                {event.category}
+                                Event
                               </span>
                             </div>
                             <div className="flex items-center text-gray-500 mb-2">
                               <Calendar className="h-4 w-4 mr-1" />
-                              <span className="text-sm">{event.date}</span>
+                              <span className="text-sm">
+                                {new Date(event.date).toLocaleDateString('en-US', {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric'
+                                })}
+                              </span>
                               <span className="mx-2">•</span>
                               <span className="text-sm">{event.location}</span>
                             </div>

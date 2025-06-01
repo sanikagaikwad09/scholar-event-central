@@ -6,7 +6,6 @@ import * as z from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -75,8 +74,8 @@ export function LoginForm({ isAdminLogin = false }: LoginFormProps) {
               title: "Admin Login Successful",
               description: "Bypassing email confirmation for admin user.",
             });
-            // Force redirect to admin dashboard for admin users
-            window.location.href = "/admin/dashboard";
+            // Use React Router navigation instead of window.location
+            navigate("/admin/dashboard");
             return;
           }
         } else {
@@ -110,14 +109,14 @@ export function LoginForm({ isAdminLogin = false }: LoginFormProps) {
               title: "Admin login successful!", 
               description: "Redirecting to dashboard..." 
             });
-            window.location.href = "/admin/dashboard";
+            navigate("/admin/dashboard");
             return;
           } else {
             throw new Error("Access denied. Admin privileges required.");
           }
         } else {
           toast({ title: "Login successful!" });
-          window.location.href = "/";
+          navigate("/");
           return;
         }
       }

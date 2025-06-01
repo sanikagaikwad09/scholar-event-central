@@ -22,18 +22,35 @@ const AdminLoginPage = () => {
   
   useEffect(() => {
     // If user is logged in and is an admin, redirect to admin dashboard
-    if (user && isAdmin) {
+    if (user && isAdmin && !isRedirecting) {
       setIsRedirecting(true);
       toast({ 
         title: "Admin login successful",
         description: "Redirecting to admin dashboard..."
       });
-      // Add a small delay to ensure the toast is shown before redirect
+      // Use a small delay to ensure the toast is shown before redirect
       setTimeout(() => {
-        navigate('/admin/dashboard');
-      }, 500);
+        navigate('/admin/dashboard', { replace: true });
+      }, 1000);
     }
-  }, [user, isAdmin, navigate, toast]);
+  }, [user, isAdmin, navigate, toast, isRedirecting]);
+
+  // Don't show the login form if user is already an admin
+  if (user && isAdmin) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center min-h-[calc(100vh-200px)] py-12 px-4">
+          <Card className="w-full max-w-md">
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <p>Redirecting to admin dashboard...</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </MainLayout>
+    );
+  }
 
   return (
     <MainLayout>
