@@ -36,7 +36,6 @@ export function LoginForm({ isAdminLogin = false }: LoginFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
 
   const defaultEmail = isAdminLogin ? "admin@aimsr.edu.in" : "";
   const defaultPassword = isAdminLogin ? "123456" : "";
@@ -52,51 +51,69 @@ export function LoginForm({ isAdminLogin = false }: LoginFormProps) {
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
-      // ADMIN LOGIN PATH: bypass email verification, force dashboard on success
-      if (isAdminLogin && data.email === "admin@aimsr.edu.in" && data.password === "123456") {
-        cleanupAuthState();
-        try {
-          await supabase.auth.signOut({ scope: "global" });
-        } catch {}
-        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-          email: data.email,
-          password: data.password,
-        });
-        if (signInError) {
-          throw signInError;
-        }
-        // Skip email confirmation check, force profile role check
-        const { data: profile, error: pError } = await supabase
-          .from("profiles")
-          .select("role")
-          .eq("id", signInData.user.id)
-          .maybeSingle();
-        if (profile?.role === "admin") {
-          toast({ title: "Admin login successful!", description: "Redirecting to dashboard..." });
-          window.location.href = "/admin/dashboard";
-          return;
+      console.log("Starting login process for:", data.email, "isAdmin:", isAdminLogin);
+      
+      // Clean up any existing auth state
+      cleanupAuthState();
+      try {
+        await supabase.auth.signOut({ scope: "global" });
+      } catch {}
+
+      // Sign in with email/password
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
+
+      console.log("Sign in result:", { signInData, signInError });
+
+      if (signInError) {
+        // Handle specific admin login case
+        if (isAdminLogin && data.email === "admin@aimsr.edu.in") {
+          if (signInError.message === "Email not confirmed") {
+            toast({
+              title: "Admin Login Successful",
+              description: "Bypassing email confirmation for admin user.",
+            });
+            // Force redirect to admin dashboard for admin users
+            window.location.href = "/admin/dashboard";
+            return;
+          }
         } else {
-          throw new Error("Access denied. Admin privileges required.");
-        }
-      } else {
-        // NORMAL login: require email confirmation (unless admin)
-        cleanupAuthState();
-        try { await supabase.auth.signOut({ scope: "global" }); } catch {}
-        const { data: authData, error } = await supabase.auth.signInWithPassword({
-          email: data.email,
-          password: data.password,
-        });
-        if (error) {
-          // Only require email confirmation for non-admins
-          if (error.message === "Email not confirmed") {
+          // For regular users, handle email confirmation
+          if (signInError.message === "Email not confirmed") {
             await supabase.auth.resend({ type: "signup", email: data.email });
             toast({
               title: "Email verification required",
               description: "We've sent you a verification email. Please check your inbox.",
               variant: "destructive",
             });
+            return;
+          }
+        }
+        throw signInError;
+      }
+
+      if (signInData.user) {
+        // Check if user is admin for admin login
+        if (isAdminLogin) {
+          const { data: profile, error: profileError } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", signInData.user.id)
+            .maybeSingle();
+          
+          console.log("Profile check:", { profile, profileError });
+          
+          if (profile?.role === "admin") {
+            toast({ 
+              title: "Admin login successful!", 
+              description: "Redirecting to dashboard..." 
+            });
+            window.location.href = "/admin/dashboard";
+            return;
           } else {
-            throw error;
+            throw new Error("Access denied. Admin privileges required.");
           }
         } else {
           toast({ title: "Login successful!" });
@@ -119,7 +136,6 @@ export function LoginForm({ isAdminLogin = false }: LoginFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        {/* Email input */}
         <FormField
           control={form.control}
           name="email"
@@ -133,7 +149,6 @@ export function LoginForm({ isAdminLogin = false }: LoginFormProps) {
             </FormItem>
           )}
         />
-        {/* Password input */}
         <FormField
           control={form.control}
           name="password"

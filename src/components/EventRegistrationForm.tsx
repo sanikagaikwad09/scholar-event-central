@@ -19,7 +19,6 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-// Update the schema to ensure agreeToTerms is strictly true
 const registrationSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
@@ -54,6 +53,8 @@ export function EventRegistrationForm({ eventId, eventTitle, onSuccess }: EventR
   });
 
   const onSubmit = async (values: RegistrationFormValues) => {
+    console.log("Starting event registration...", { eventId, userId: user?.id, values });
+    
     if (!user) {
       toast({
         title: "Please log in to register for the event",
@@ -62,37 +63,62 @@ export function EventRegistrationForm({ eventId, eventTitle, onSuccess }: EventR
       });
       return;
     }
+
     setLoading(true);
     try {
-      // Insert with correct event/user/fields
-      const { error } = await supabase.from("event_registrations").insert([{
-        event_id: eventId,
-        user_id: user.id,
-        name: values.name,
-        email: values.email,
-        phone: values.phone,
-      }]);
-      if (error) {
-        if (
-          error.message &&
-          (error.message.includes("duplicate key") || error.message.includes("already exists"))
-        ) {
-          toast({
-            title: "Already registered",
-            description: "You have already registered for this event.",
-            variant: "destructive",
-          });
-        } else {
-          throw error;
-        }
+      // Check if user is already registered
+      const { data: existingRegistration, error: checkError } = await supabase
+        .from("event_registrations")
+        .select("id")
+        .eq("event_id", eventId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error("Error checking existing registration:", checkError);
+        throw checkError;
+      }
+
+      if (existingRegistration) {
+        toast({
+          title: "Already registered",
+          description: "You have already registered for this event.",
+          variant: "destructive",
+        });
         return;
       }
+
+      // Insert new registration
+      const { data: insertData, error: insertError } = await supabase
+        .from("event_registrations")
+        .insert([{
+          event_id: eventId,
+          user_id: user.id,
+          name: values.name,
+          email: values.email,
+          phone: values.phone,
+        }])
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error("Error inserting registration:", insertError);
+        throw insertError;
+      }
+
+      console.log("Registration successful:", insertData);
+      
       setShowConfirmation(true);
       if (onSuccess) onSuccess();
+      
       toast({
         title: "Registration successful!",
         description: `You have been registered for ${eventTitle}.`,
       });
+
+      // Reset form
+      form.reset();
+      
     } catch (error) {
       console.error("Registration error:", error);
       toast({
