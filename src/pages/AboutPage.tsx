@@ -3,29 +3,33 @@ import React from "react";
 import MainLayout from "@/components/MainLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Book, Calendar, Users, MessageSquare } from "lucide-react";
+import neetaImg from "@/components/images/Prof. Neeta Bhatt.jpeg";
+import ramkrishnanImg from "@/components/images/Prof. Ramkrishnan Iyer.jpeg";
+import rashmiImg from "@/components/images/Prof. Rashmi Pathak.jpeg";
+import shwetaImg from "@/components/images/Prof. Shweta Nigam.jpeg";
 
 const AboutPage: React.FC = () => {
   // Team members data
   const team = [
     {
-      name: "Dr. Emma Johnson",
-      role: "Faculty Advisor",
-      image: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
+      name: "Prof. Neeta Bhatt",
+      role: "HOD",
+      image: neetaImg,
     },
     {
-      name: "Michael Chen",
-      role: "Student Body President",
-      image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
+      name: "Prof. Ramkrishnan Iyer",
+      role: "Head professor",
+      image: ramkrishnanImg,
     },
     {
-      name: "Sophia Rodriguez",
-      role: "Events Coordinator",
-      image: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
+      name: "Prof. Rashmi Pathak",
+      role: "Events Coordinator/Discipline head",
+      image: rashmiImg,
     },
     {
-      name: "James Wilson",
+      name: "Prof. Shweta Nigam",
       role: "Technical Lead",
-      image: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60",
+      image: shwetaImg,
     }
   ];
 

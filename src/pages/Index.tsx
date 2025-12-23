@@ -4,6 +4,7 @@ import MainLayout from "@/components/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowRight, Calendar } from "lucide-react";
+import heroImage from "@/components/images/aimsr1.jpg";
 
 // Sample upcoming events data
 const upcomingEvents = [
@@ -41,7 +42,13 @@ const Index: React.FC = () => {
   return (
     <MainLayout>
       {/* Hero Section */}
-      <section className="hero-section relative text-white py-20">
+      <section className="hero-section relative text-white py-20 overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url(${heroImage})` }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/60 to-black/40" />
+
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
           <h1 className="text-4xl md:text-5xl font-bold mb-4 animate-fade-in">
             Aditya Institute Of Management Studies & Research
